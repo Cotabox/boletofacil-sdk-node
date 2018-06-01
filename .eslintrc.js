@@ -4,6 +4,7 @@ module.exports = {
     "rules": {
       "no-unused-vars": 0,
       "import/prefer-default-export": 0,
-      "guard-for-in": 0
+      "guard-for-in": 0,
+      "class-methods-use-this": 0
     },
 };

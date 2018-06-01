@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import sinonStubPromise from 'sinon-stub-promise';
 import BoletoFacil from '../src/index';
+import issueChargeFunc from '../src/issueCharge';
 
 sinonStubPromise(sinon);
 
@@ -28,9 +29,13 @@ describe('issueCharge', () => {
 
   describe('smoke tests', () => {
     it('should exist issueCharge', () => expect(boletoFacil.issueCharge).to.exist);
+    it('should exist issueCharge function', () => expect(issueChargeFunc).to.exist);
 
     it('should issueCharge be a function', () => expect(boletoFacil.issueCharge).to.be.a('function'));
+    it('should original issueCharge be a function', () => expect(issueChargeFunc).to.be.a('function'));
   });
+
+  it('should call original func', () => expect(issueChargeFunc).to.throw());
 
   it('should call fetch method', () => {
     const issueCharge = boletoFacil.issueCharge();
