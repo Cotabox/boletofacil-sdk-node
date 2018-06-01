@@ -1,5 +1,5 @@
 {
-  "name": "boletofacil-sdk-node",
+  "name": "boleto-facil",
   "version": "1.0.0",
   "description": "SDK Node para integração com a API do Boleto Fácil.",
   "main": "lib/index.js",
