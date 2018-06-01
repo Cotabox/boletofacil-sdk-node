@@ -2,7 +2,7 @@
   "name": "boleto-facil",
   "version": "1.0.0",
   "description": "SDK Node para integração com a API do Boleto Fácil.",
-  "main": "lib/index.js",
+  "main": "dist/boleto-facil.min.js",
   "scripts": {
     "clear": "rimraf dist",
     "build:watch": "npm run build:umd:min -- --watch",
@@ -17,8 +17,7 @@
     "coveralls": "npm run test:coverage && nyc report --reporter=text-lcov | coveralls"
   },
   "files": [
-    "dist",
-    "lib"
+    "dist"
   ],
   "repository": {
     "type": "git",
