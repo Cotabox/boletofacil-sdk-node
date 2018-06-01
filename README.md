@@ -34,76 +34,91 @@ const boletoFacil = new BoletoFacil({
 
 ### Gerando uma cobrança
 
-`Charge` é a classe que representa uma cobrança do Boleto Fácil e que contém os atributos relacionados a ela, que 
+`Charge` é um método que representa uma cobrança do Boleto Fácil e que contém os atributos relacionados a ela, que 
 são exatamente os atributos disponibilizados pela API do Boleto Fácil e podem ser conferidos [aqui](https://www.boletobancario.com/boletofacil/integration/integration.html#cobrancas). 
 
-Dentre os atributos da cobrança estão os dados do pagador, que são definidos na classe `Payer`.
+```js
+const chargeResponse = boletoFacil.issueCharge({
+  token: '0192B1544430E3943D4F9E4AAAF94952DBF5DEC20590008C279A04EAD3059EEA',
+  description: 'Pedido 48192 / TV 40 Polegadas / Cosméticos',
+  reference: '',
+  amount: '10.00',
+  dueDate: '',
+  installments: '',
+  maxOverdueDays: '',
+  fine: '',
+  interest: '',
+  discountAmount: '',
+  discountDays: '',
+  payerName: 'Cotabox',
+  payerCpfCnpj: '21.842.162/0001-47',
+  payerEmail: '',
+  payerSecondaryEmail: '',
+  payerPhone: '',
+  payerBirthDate: '',
+  billingAddressStreet: '',
+  billingAddressNumber: '',
+  billingAddressComplement: '',
+  billingAddressNeighborhood: '',
+  billingAddressCity: '',
+  billingAddressState: '',
+  billingAddressPostcode: '',
+  notifyPayer: '',
+  notificationUrl: '',
+  responseType: '',
+  feeSchemaToken: '',
+  splitRecipient: '',
+  paymentTypes: '',
+  creditCardHash: '',
+  creditCardNumber: '',
+  creditCardHolderName: '',
+  creditCardSecurityCode: '',
+  creditCardExpirationMonth: '',
+  creditCardExpirationYear: '',
+  paymentAdvance: '',
+});
 
-```java
-Payer payer = new Payer();
-payer.setName("Pagador teste - SDK Java");
-payer.setCpfCnpj("11122233300");
+chargeResponse.then(res => console.log(res));
 
-Charge charge = new Charge();
-charge.setDescription("Cobrança teste gerada pelo SDK Java");
-charge.setAmount(BigDecimal.valueOf(123.45));
-charge.setPayer(payer);
-
-ChargeResponse response = boletoFacil.issueCharge(charge);
-if (response.isSuccess()) {
-  for (Charge c : response.getData().getCharges()) {
-    System.out.println(c);
-  }
-}
 ```
 
-A classe `ChargeResponse` indica se a requisição foi bem sucedida ou não (da mesma forma que todas as classes que herdam da superclasse `Response` no SDK) e, além disso, contém a lista de cobranças que foram geradas pela requisição, em uma lista de objetos do tipo `Charge`.
+A constante `chargeResponse` é uma promise que quando resolvida retorna a resposta da API da Boleto Fácil.
 
 
 ### Consulta de saldo
 
 Por padrão, as requisições feitas pelo SDK desserializam o retorno em **JSON** para popular os objetos com as informações das requisições, mas o SDK também provê a possibilidade de alterar a formatação do retorno da API para **XML**, conforme pode ser visto no exemplo abaixo:
 
-```java
-FetchBalanceResponse response = boletoFacil.fetchBalance(ResponseType.XML);
-if (response.isSuccess()) {
-  System.out.println(response.getData());
-}
+```js
+const balance = boletoFacil.fetchBalance({
+  token: '0192B1544430E3943D4F9E4AAAF94952DBF5DEC20590008C279A04EAD3059EEA',
+  responseType: 'XML'
+});
+
+balance.then(res => console.log(res));
+
 ```
 
 
 ### Solicitação de transferência
 
-Mesmo que se deseje solicitar uma transferência com o saldo total, é necessário passar um parâmetro da classe `Transfer`, sem o atributo `amount` definido, no caso.
+```js
+const response = boletoFacil.requestTransfer({
+  token: '0192B1544430E3943D4F9E4AAAF94952DBF5DEC20590008C279A04EAD3059EEA',
+});
 
-```java
-Transfer transfer = new Transfer();
-TransferResponse response = boletoFacil.requestTransfer(transfer);
-if (response.isSuccess()) {
-  System.out.println(response);
-}
+response.then(res => console.log(res));
 ```
-
-Como a resposta de solicitação transferência contém apenas se a requisição foi bem sucedida ou não, não se aplica o método `getData()` para ela.
-
 
 ### Consulta de pagamentos e cobranças
 
-Para esta requisição, é usado um objeto da classe `ListChargesDates` para definir as datas usadas no filtro da consulta. No exemplo abaixo, são usadas apenas as datas de vencimento das cobranças desejadas.
+```js
+const charges = boletoFacil.listCharges({
+  token: '0192B1544430E3943D4F9E4AAAF94952DBF5DEC20590008C279A04EAD3059EEA',
+  beginPaymentDate: '30/05/2018',
+});
 
-```java
-Calendar endDate = Calendar.getInstance();
-endDate.add(Calendar.DAY_OF_WEEK, 5);
-ListChargesDates dates = new ListChargesDates();
-dates.setBeginDueDate(Calendar.getInstance());
-dates.setEndDueDate(endDate);
-
-ListChargesResponse response = boletoFacil.listCharges(dates);
-if (response.isSuccess()) {
-  for (Charge c : response.getData().getCharges()) {
-    System.out.println(c);
-  }
-}
+charges.then(res => console.log(res));
 ```
 
 
@@ -111,43 +126,42 @@ if (response.isSuccess()) {
 
 A API avançada também está disponível no SDK. Segue abaixo um exemplo de criação de favorecido, com os principais atributos (e objetos) relacionados.
 
-```java
-Person person = new Person();
-person.setName("Favorecido do SDK Java");
-person.setCpfCnpj("11122233300");
+```js
+const payee = boletoFacil.createPayee({
+  token: '0192B1544430E3943D4F9E4AAAF94952DBF5DEC20590008C279A04EAD3059EEA',
+  notificationUrl: '',
+  name: 'Isabella e Carolina Locações de Automóveis ME',
+  cpfCnpj: '21.842.162/0001-47',
+  email: 'compras@isabellaecarolinalocacoesdeautomoveisme.com.br',
+  password: '12345',
+  birthDate: '',
+  phone: '(11) 3613-0831',
+  linesOfBusiness: 'Fornecedor',
+  tradingName: 'Isabella e Carolina Locações de Automóveis ME',
+  reprName: 'Severino',
+  reprCpfCnpj: '377.910.350-81',
+  reprBirthDate: '25/09/2013',
+  accountHolderName: 'Isabella e Carolina Locações de Automóveis ME',
+  accountHolderCpfCnpj: '21.842.162/0001-47',
+  bankNumber: '077',
+  agencyNumber: '0001-9',
+  accountNumber: '1211054-0',
+  bankAccountType: 'CHECKING',
+  accountComplementNumber: '',
+  category: 'SERVICES',
+  companyType: 'LTDA',
+  street: 'Rua Manuel Soeiro Ramirez',
+  number: '115',
+  complement: '',
+  neighborhood: 'Jardim Mimar',
+  city: 'São Paulo',
+  state: 'SP',
+  postCode: '08534245',
+  businessAreaId: '2024',
+});
 
-BankAccount account = new BankAccount();
-account.setBankAccountType(BankAccountType.CHECKING);
-account.setBankNumber("237");
-account.setAgencyNumber("123");
-account.setAccountNumber("4567");
-account.setAccountComplementNumber(0);
+payee.then(res => console.log(res));
 
-Address address = new Address();
-address.setStreet("Rua Teste");
-address.setNumber("123");
-address.setCity("4106902"); // Deve ser passado o Código de município do IBGE, assim como na API
-address.setState("PR");
-address.setPostcode("12345000");
-
-Payee payee = new Payee();
-payee.setName("Favorecido do SDK Java");
-payee.setCpfCnpj("11122233300");
-payee.setEmail("email@teste.com");
-payee.setPassword("senha");
-payee.setBirthDate(Calendar.getInstance()); // Não funciona: o Boleto Fácil rejeita favorecidos menores de idade
-payee.setPhone("(99) 91234-4321");
-payee.setLinesOfBusiness("Linha de negócio");
-payee.setAccountHolder(person);
-payee.setBankAccount(account);
-payee.setCategory(Category.OTHER);
-payee.setAddress(address);
-payee.setBusinessAreaId(1000);
-
-PayeeResponse response = boletoFacil.createPayee(payee);
-if (response.isSuccess()) {
-  System.out.println(response.getData());
-}
 ```
 
 A tabela com os códigos de município do IBGE pode ser consultada [aqui](http://www.ibge.gov.br/home/geociencias/areaterritorial/area.shtm).
@@ -156,7 +170,6 @@ A tabela com os códigos de município do IBGE pode ser consultada [aqui](http:/
 ## Suporte
 
 Em caso de dúvidas, problemas ou sugestões, não hesite em contatar nossa [equipe de suporte](mailto:suporte@boletobancario.com).
-
 
 ## Contributing
 
@@ -168,9 +181,9 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-| ![João Cavalcante](https://avatars1.githubusercontent.com/u/13931503?v=3&s=150)|
-|:---------------------:|
-|  [João Cavalcante](https://github.com/kavalcante/)   |
+|  ![João Cavalcante](https://avatars1.githubusercontent.com/u/13931503?v=3&s=150)    | ![Leonardo Turbiani](https://avatars3.githubusercontent.com/u/1368287?v=3&s=150)
+|-------------|--------|
+|[João Cavalcante](https://github.com/kavalcante/)| [Leonardo Turbiani](https://github.com/turbiani/) |
 
 See also the list of [contributors](https://github.com/Cotabox/boletofacil-sdk-node/contributors) who participated in this project.
 

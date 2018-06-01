@@ -4,6 +4,10 @@ import createPayee from './createPayee';
 import createPayeeFeeSchema from './createPayeeFeeSchema';
 import getPayeeStatus from './getPayeeStatus';
 import issueCharge from './issueCharge';
+import listCharges from './listCharges';
+import fetchBalance from './fetchBalance';
+import requestTransfer from './requestTransfer';
+import cancelCharge from './cancelCharge';
 
 import API from './config';
 
@@ -18,6 +22,10 @@ export default class BoletoFacil {
     this.createPayeeFeeSchema = createPayeeFeeSchema;
     this.getPayeeStatus = getPayeeStatus;
     this.issueCharge = issueCharge;
+    this.listCharges = listCharges;
+    this.fetchBalance = fetchBalance;
+    this.requestTransfer = requestTransfer;
+    this.cancelCharge = cancelCharge;
   }
 
   async request(url, body = {}, method = 'post') {
