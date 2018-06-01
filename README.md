@@ -1,218 +1,166 @@
-# Wrappify
+## SDK Node para integração com o Boleto Fácil
 
-[![Build Status](https://travis-ci.org/kavalcante/wrappify.svg?branch=master)](https://travis-ci.org/kavalcante/wrappify) [![Coverage Status](https://coveralls.io/repos/github/kavalcante/wrappify/badge.svg?branch=master)](https://coveralls.io/github/kavalcante/wrappify?branch=master)
+[![Build Status](https://travis-ci.org/Cotabox/boletofacil-sdk-node.svg?branch=master)](https://travis-ci.org/Cotabox/boletofacil-sdk-node) [![Coverage Status](https://coveralls.io/repos/github/Cotabox/boletofacil-sdk-node/badge.svg?branch=master)](https://coveralls.io/github/Cotabox/boletofacil-sdk-node?branch=master)
 
-A wrapper to work with the [Spotify Web API](https://developer.spotify.com/web-api/).
+Este SDK (Software Development Kit) para o Boleto Fácil tem como objetivo abstrair, para desenvolvedores de aplicações Node, os detalhes de comunicação com a [API do Boleto Fácil](https://www.boletobancario.com/boletofacil/integration/integration.html), tanto com o servidor de [produção](https://www.boletobancario.com/boletofacil/) como com o servidor de testes ([sandbox](https://sandbox.boletobancario.com/boletofacil/)), de modo que o desenvolvedor possa se concentrar na lógica de negócio de sua aplicação.
 
-## Browser Support
+## Requisitos
 
-This library relies on [Fetch API](https://fetch.spec.whatwg.org/). And this API is supported in the following browsers.
+* Node (qualquer versão)
 
-![Chrome](https://cloud.githubusercontent.com/assets/398893/3528328/23bc7bc4-078e-11e4-8752-ba2809bf5cce.png) | ![Firefox](https://cloud.githubusercontent.com/assets/398893/3528329/26283ab0-078e-11e4-84d4-db2cf1009953.png) | ![Opera](https://cloud.githubusercontent.com/assets/398893/3528330/27ec9fa8-078e-11e4-95cb-709fd11dac16.png) | ![Safari](https://cloud.githubusercontent.com/assets/398893/3528331/29df8618-078e-11e4-8e3e-ed8ac738693f.png) | ![IE](https://cloud.githubusercontent.com/assets/398893/3528325/20373e76-078e-11e4-8e3a-1cb86cf506f0.png) |
---- | --- | --- | --- | --- |
-39+ ✔ | 42+ ✔ | 29+ ✔ | 10.1+ ✔ | Nope ✘ |
-
-## Dependencies
-
-This library depends on [fetch](https://fetch.spec.whatwg.org/) to make requests to the Spotify Web API. For environments that don't support fetch, you'll need to provide a [polyfill](https://github.com/github/fetch) to browser or [polyfill](https://github.com/bitinn/node-fetch) to Node.
-
-## Installation
+## Integração
 
 ```sh
-npm install wrappify --save
+npm install boleto-facil --save
 ```
-## How to use
 
-### ES6
+## Limitações
+
+O único item da API do Boleto Fácil que essa SDK não contempla é a [notificação de pagamentos](https://www.boletobancario.com/boletofacil/integration/integration.html#notificacao) para aplicações Web, através da URL de notificação. Nesse caso, tanto a lógica de captura das requisições POST enviadas pelo Boleto Fácil com os dados dos pagamentos como a lógica da baixa das cobranças pagas ficam a cargo do sistema integrado com o Boleto Fácil.
+
+## Guia de uso
+
+Por padrão, ao utilizar a API será utilizado o ambiente SANDBOX, para utilizar em produção, siga o exemplo abaixo:
 
 ```js
-// to import a specific method
-import Wrappify from 'wrappify';
+import BoletoFacil from 'boleto-facil';
 
-const spotify = new Wrappify({
-  token: 'YOUR_TOKEN_HERE'
+const boletoFacil = new BoletoFacil({
+  production: true
 });
 
-// using  method
-spotify.search.artists('Linkin Park');
 ```
 
-### CommonJS
 
-```js
-const Wrappify = require('wrappify').default;
+### Gerando uma cobrança
 
-const spotify = new Wrappify({
-  token: 'YOUR_TOKEN_HERE'
-});
+`Charge` é a classe que representa uma cobrança do Boleto Fácil e que contém os atributos relacionados a ela, que 
+são exatamente os atributos disponibilizados pela API do Boleto Fácil e podem ser conferidos [aqui](https://www.boletobancario.com/boletofacil/integration/integration.html#cobrancas). 
+
+Dentre os atributos da cobrança estão os dados do pagador, que são definidos na classe `Payer`.
+
+```java
+Payer payer = new Payer();
+payer.setName("Pagador teste - SDK Java");
+payer.setCpfCnpj("11122233300");
+
+Charge charge = new Charge();
+charge.setDescription("Cobrança teste gerada pelo SDK Java");
+charge.setAmount(BigDecimal.valueOf(123.45));
+charge.setPayer(payer);
+
+ChargeResponse response = boletoFacil.issueCharge(charge);
+if (response.isSuccess()) {
+  for (Charge c : response.getData().getCharges()) {
+    System.out.println(c);
+  }
+}
 ```
 
-### UMD in Browser
+A classe `ChargeResponse` indica se a requisição foi bem sucedida ou não (da mesma forma que todas as classes que herdam da superclasse `Response` no SDK) e, além disso, contém a lista de cobranças que foram geradas pela requisição, em uma lista de objetos do tipo `Charge`.
 
-```html
-<!-- to import non-minified version -->
-<script src="wrappify.js"></script>
 
-<!-- to import minified version -->
-<script src="wrappify.min.js"></script>
+### Consulta de saldo
+
+Por padrão, as requisições feitas pelo SDK desserializam o retorno em **JSON** para popular os objetos com as informações das requisições, mas o SDK também provê a possibilidade de alterar a formatação do retorno da API para **XML**, conforme pode ser visto no exemplo abaixo:
+
+```java
+FetchBalanceResponse response = boletoFacil.fetchBalance(ResponseType.XML);
+if (response.isSuccess()) {
+  System.out.println(response.getData());
+}
 ```
 
-After that the library will be available to the Global as `Wrappify`. Follow an example:
 
-```js
+### Solicitação de transferência
 
-const spotify = new Wrappify({
-  token: 'YOUR_TOKEN_HERE'
-});
+Mesmo que se deseje solicitar uma transferência com o saldo total, é necessário passar um parâmetro da classe `Transfer`, sem o atributo `amount` definido, no caso.
 
-const albums = spotify.search.albums('Choosen Artist');
+```java
+Transfer transfer = new Transfer();
+TransferResponse response = boletoFacil.requestTransfer(transfer);
+if (response.isSuccess()) {
+  System.out.println(response);
+}
 ```
 
-## Methods
-
-> Follow the methods that the library provides.
-
-### search.albums(query)
-
-> Search for informations about Albums with provided query. Test in [Spotify Web Console](https://developer.spotify.com/web-api/console/get-search-item/) with type defined as *album*.
-
-**Arguments**
-
-| Argument | Type    | Options           |
-|----------|---------|-------------------|
-|`query`   |*string* | 'Any search query'|
+Como a resposta de solicitação transferência contém apenas se a requisição foi bem sucedida ou não, não se aplica o método `getData()` para ela.
 
 
-**Example**
+### Consulta de pagamentos e cobranças
 
-```js
-spotify.search.albums('Linkin Park')
-  .then(data => {
-    // do what you want with the data
-  })
+Para esta requisição, é usado um objeto da classe `ListChargesDates` para definir as datas usadas no filtro da consulta. No exemplo abaixo, são usadas apenas as datas de vencimento das cobranças desejadas.
+
+```java
+Calendar endDate = Calendar.getInstance();
+endDate.add(Calendar.DAY_OF_WEEK, 5);
+ListChargesDates dates = new ListChargesDates();
+dates.setBeginDueDate(Calendar.getInstance());
+dates.setEndDueDate(endDate);
+
+ListChargesResponse response = boletoFacil.listCharges(dates);
+if (response.isSuccess()) {
+  for (Charge c : response.getData().getCharges()) {
+    System.out.println(c);
+  }
+}
 ```
 
-### search.artists(query)
 
-> Search for informations about Artists with provided query. Test in [Spotify Web Console](https://developer.spotify.com/web-api/console/get-search-item/) with type defined as *artist*.
+### Criação de favorecido (API Avançada)
 
-**Arguments**
+A API avançada também está disponível no SDK. Segue abaixo um exemplo de criação de favorecido, com os principais atributos (e objetos) relacionados.
 
-| Argument | Type    | Options           |
-|----------|---------|-------------------|
-|`query`   |*string* | 'Any search query'|
+```java
+Person person = new Person();
+person.setName("Favorecido do SDK Java");
+person.setCpfCnpj("11122233300");
 
+BankAccount account = new BankAccount();
+account.setBankAccountType(BankAccountType.CHECKING);
+account.setBankNumber("237");
+account.setAgencyNumber("123");
+account.setAccountNumber("4567");
+account.setAccountComplementNumber(0);
 
-**Example**
+Address address = new Address();
+address.setStreet("Rua Teste");
+address.setNumber("123");
+address.setCity("4106902"); // Deve ser passado o Código de município do IBGE, assim como na API
+address.setState("PR");
+address.setPostcode("12345000");
 
-```js
-spotify.search.artists('Linkin Park')
-  .then(data => {
-    // do what you want with the data
-  })
+Payee payee = new Payee();
+payee.setName("Favorecido do SDK Java");
+payee.setCpfCnpj("11122233300");
+payee.setEmail("email@teste.com");
+payee.setPassword("senha");
+payee.setBirthDate(Calendar.getInstance()); // Não funciona: o Boleto Fácil rejeita favorecidos menores de idade
+payee.setPhone("(99) 91234-4321");
+payee.setLinesOfBusiness("Linha de negócio");
+payee.setAccountHolder(person);
+payee.setBankAccount(account);
+payee.setCategory(Category.OTHER);
+payee.setAddress(address);
+payee.setBusinessAreaId(1000);
+
+PayeeResponse response = boletoFacil.createPayee(payee);
+if (response.isSuccess()) {
+  System.out.println(response.getData());
+}
 ```
 
-### search.tracks(query)
-
-> Search for informations about Tracks with provided query. Test in [Spotify Web Console](https://developer.spotify.com/web-api/console/get-search-item/) with type defined as *track*.
-
-**Arguments**
-
-| Argument | Type    | Options           |
-|----------|---------|-------------------|
-|`query`   |*string* | 'Any search query'|
+A tabela com os códigos de município do IBGE pode ser consultada [aqui](http://www.ibge.gov.br/home/geociencias/areaterritorial/area.shtm).
 
 
-**Example**
+## Suporte
 
-```js
-spotify.search.tracks('Numb')
-  .then(data => {
-    // do what you want with the data
-  })
-```
+Em caso de dúvidas, problemas ou sugestões, não hesite em contatar nossa [equipe de suporte](mailto:suporte@boletobancario.com).
 
-### search.playlists(query)
-
-> Search for informations about Playlist with provided query. Test in [Spotify Web Console](https://developer.spotify.com/web-api/console/get-search-item/) with type defined as *playlist*.
-
-**Arguments**
-
-| Argument | Type    | Options           |
-|----------|---------|-------------------|
-|`query`   |*string* | 'Any search query'|
-
-
-**Example**
-
-```js
-spotify.search.playlists('Happy Day')
-  .then(data => {
-    // do what you want with the data
-  })
-```
-
-### album.getAlbum(id)
-
-> Search for informations about a specific Album with provided id. Test in [Spotify Web Console](https://developer.spotify.com/web-api/console/get-album/).
-
-**Arguments**
-
-| Argument | Type    | Options           |
-|----------|---------|-------------------|
-|`id`   |*string* | 'Specific id'|
-
-
-**Example**
-
-```js
-spotify.album.getAlbum('4aawyAB9vmqN3uQ7FjRGTy')
-  .then(data => {
-    // do what you want with the data
-  })
-```
-
-### album.getAlbums(ids)
-
-> Search for informations about some Albums with all id's. Test in [Spotify Web Console](https://developer.spotify.com/web-api/console/get-several-albums/).
-
-**Arguments**
-
-| Argument | Type    | Options           |
-|----------|---------|-------------------|
-|`ids`   |*Array of strings* | ['id1', 'id2']|
-
-**Example**
-
-```js
-spotify.album.getAlbums(['4aawyAB9vmqN3uQ7FjRGTy', '1A2GTWGtFfWp7KSQTwWOyo'])
-  .then(data => {
-    // do what you want with the data
-  })
-```
-
-### album.getTracks(id)
-
-> Search for all tracks in a specific Album with provided id. Test in [Spotify Web Console](https://developer.spotify.com/web-api/console/get-album-tracks/).
-
-**Arguments**
-
-| Argument | Type    | Options           |
-|----------|---------|-------------------|
-|`id`   |*string* | 'Specific id'|
-
-**Example**
-
-```js
-spotify.album.getTracks('4aawyAB9vmqN3uQ7FjRGTy')
-  .then(data => {
-    // do what you want with the data
-  })
-```
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](https://github.com/kavalcante/wrappify/blob/master/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://github.com/Cotabox/boletofacil-sdk-node/blob/master/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
@@ -224,8 +172,8 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 |:---------------------:|
 |  [João Cavalcante](https://github.com/kavalcante/)   |
 
-See also the list of [contributors](https://github.com/kavalcante/wrappify/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/Cotabox/boletofacil-sdk-node/contributors) who participated in this project.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the Apache 2.0 License - see the [LICENSE.md](LICENSE.md) file for details
